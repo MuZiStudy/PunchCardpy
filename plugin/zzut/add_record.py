@@ -8,9 +8,10 @@ from plugin.zzut.cookie import get_cookies
 # 用于添加当前时间点的打卡记录的
 
 
-def add_record(url, headers, **values):
+def add_record(url, headers, **data):
     # 伪装成浏览器
     ua = UserAgent()
+    values = data['data']
     if ~('User-Agent' in headers):
         headers['User-Agent'] = ua.random
 

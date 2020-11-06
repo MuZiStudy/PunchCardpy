@@ -15,6 +15,7 @@ import urllib.request
 # animal_heat 体温元组
 # 已有函数仅可以在 zzut_zdxy_w1使用，并且最好这个也别用，用add_zzut_zdxy_w1_full_values
 # 因为不同的地方的东西，我不晓得里边的其他内容内容一致（数据条拼音简写，我猜不出来）
+
 def add_zzut_zdxy_w1(address, class_and_grade, number, academy, current_position_number, name, animal_heat=['36.4', '36.8', '36.2']):
     # 目前已知的url提交链接
     url = 'http://sjgl.zzut.edu.cn/gx/gxxs/jkzk/saveOrEdit.json'
@@ -32,7 +33,7 @@ def add_zzut_zdxy_w1(address, class_and_grade, number, academy, current_position
     # Referer防盗链参数，用于声明是从哪个页面转到这里的
     headers = {'Cookie': get_cookies(login_url), 'Accept-Encoding': 'gzip', 'Content-Type': 'application/json;charset=UTF-8',
                'Referer': 'http://sjgl.zzut.edu.cn/vue/qyweixin/gx/gxxs/jkbg/jkbgMain/jkbgList'}
-    return add_record(url=url, headers=headers, values=values)
+    return add_record(url=url, headers=headers, data=values)
 
 
 # 已有函数仅可以在 zzut_zdxy_w1使用
@@ -49,12 +50,12 @@ def add_zzut_zdxy_w1_full_values(values):
     # Referer防盗链参数，用于声明是从哪个页面转到这里的
     headers = {'Cookie': get_cookies(login_url), 'Accept-Encoding': 'gzip', 'Content-Type': 'application/json;charset=UTF-8',
                'Referer': 'http://sjgl.zzut.edu.cn/vue/qyweixin/gx/gxxs/jkbg/jkbgMain/jkbgList'}
-    return add_record(url=url, headers=headers, values=values)
+    return add_record(url=url, headers=headers, data=values)
 
 
 # 修改功能有，但绝壁不能乱给，改错了全完犊子
 # value是完整的数据条，别想着乱搞，数据条有个id，那是指定哪一条数据的关键
-def modify_zzut_zdxy_w1_full_values(cookie, **values):
+def modify_zzut_zdxy_w1_full_values(cookie, **data):
     # 伪装成浏览器
     ua = UserAgent()
     url = 'http://sjgl.zzut.edu.cn/gx/gxxs/jkzk/saveOrEdit.json'
@@ -63,7 +64,10 @@ def modify_zzut_zdxy_w1_full_values(cookie, **values):
     # Referer防盗链参数，用于声明是从哪个页面转到这里的
     headers = {'Cookie': cookie, 'Accept-Encoding': 'gzip', 'Content-Type': 'application/json;charset=UTF-8', 'User-Agent': ua.random,
                'Referer': 'http://sjgl.zzut.edu.cn/vue/qyweixin/gx/gxxs/jkbg/jkbgFrom?id='}
-    headers['Referer'] = headers['Referer']+values['id']
+
+    values = data['data']
+
+    headers['Referer'] = headers['Referer'] + values['id']
 
     request = urllib.request.Request(url=url, headers=headers, data=json.dumps(
         values).encode(encoding='UTF8'))  # 需要通过encode设置编码 要不会报错
@@ -71,7 +75,8 @@ def modify_zzut_zdxy_w1_full_values(cookie, **values):
     response = urllib.request.urlopen(request)  # 发送请求
 
     logInfo = response.read().decode()  # 读取对象 将返回的二进制数据转成string类型
-    print(logInfo)
+    return_code = json.loads(logInfo)
+    return return_code
 
 
 # address当前位置名称
@@ -84,8 +89,15 @@ def modify_zzut_zdxy_w1_full_values(cookie, **values):
 # 因为很多数据互相绑定的，因为单人环境，所以需要多组对比数据条并加以修改代码、测试后使用
 # 已有函数仅可以在 zzut_zdxy_w1使用
 # 主要功能已经实现，接下来的使用体验，范围，自行实现哦,哈哈
-results = add_zzut_zdxy_w1(address='地址', class_and_grade='班级',
-                           number='学号', academy='学院', current_position_number='所在地区行政编码', name='姓名')
+# results = add_zzut_zdxy_w1(address='地址', class_and_grade='班级',
+#                            number='学号', academy='学院', current_position_number='所在地区行政编码', name='姓名')
+
+
+
+# 全数据打卡自测可用
+values = {}
+results = add_zzut_zdxy_w1_full_values(values)
+
 
 # 还是对比数据条，使用add_zzut_zdxy_w1_full_values靠谱
 
