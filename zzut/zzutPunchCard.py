@@ -1,12 +1,17 @@
 # -*- coding: UTF-8 -*-
 import json
-from plugin.zzut.cookie import get_cookies
-from plugin.zzut.add_record import add_record
-import plugin.zzut.add_record
 from fake_useragent import UserAgent
 import urllib.request
+from datetime import datetime
+import os
+import sys
+from apscheduler.schedulers.blocking import BlockingScheduler
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# __file__获取执行文件相对路径，整行为取上一级的上一级目录
+sys.path.append(BASE_DIR)
 
-
+from plugin.zzut.cookie import get_cookies
+from plugin.zzut.add_record import add_record
 # address当前位置名称
 # class_and_grade 班级名称
 # current_position_number 当前位置行政编码，不是邮编
@@ -15,6 +20,7 @@ import urllib.request
 # animal_heat 体温元组
 # 已有函数仅可以在 zzut_zdxy_w1使用，并且最好这个也别用，用add_zzut_zdxy_w1_full_values
 # 因为不同的地方的东西，我不晓得里边的其他内容内容一致（数据条拼音简写，我猜不出来）
+
 
 def add_zzut_zdxy_w1(address, class_and_grade, number, academy, current_position_number, name, animal_heat=['36.4', '36.8', '36.2']):
     # 目前已知的url提交链接
@@ -93,23 +99,52 @@ def modify_zzut_zdxy_w1_full_values(cookie, **data):
 #                            number='学号', academy='学院', current_position_number='所在地区行政编码', name='姓名')
 
 
-
 # 全数据打卡自测可用
-values = {}
-results = add_zzut_zdxy_w1_full_values(values)
+# values = {}
+# results = add_zzut_zdxy_w1_full_values(values)
 
 
-# 还是对比数据条，使用add_zzut_zdxy_w1_full_values靠谱
+def auto_add_zzut_zdxy_w1_full_values(file_path):
 
-if ~('code' in results):
-    if results['code'] == "-1":
-        if results['message'] == "此时间已经填报！":
-            print("填报完成")
+    # 读取名单列表
+    name_file = open(file_path, "r", encoding='UTF-8')
+    name_table_str = ""
+    for line in name_file:
+        name_table_str = name_table_str+line
+    name_file.close()
+
+    # 转化为json对象
+    name_table_json = json.loads(name_table_str)
+
+    # 以追加形式打开日志文件
+    log_file = open(BASE_DIR+'\\zzut\\log\\punchcard.log',
+                    'a', encoding='UTF-8')
+
+    # 循环执行打卡
+    for values in name_table_json['w1_names']:
+        results = add_zzut_zdxy_w1_full_values(values)
+        log_file.write(values['xh']+'\t')
+        log_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+'\t')
+        if ~('code' in results):
+            if results['code'] == "-1":
+                if results['message'] == "此时间已经填报！":
+                    log_file.write("填报完成")
+                else:
+                    log_file.write("填报失败")
+            elif results['code'] == "1":
+                log_file.write("填报完成")
+            else:
+                log_file.write("填报失败异常")
         else:
-            print("填报失败")
-    elif results['code'] == "1":
-        print("填报完成")
-    else:
-        print("填报失败异常")
-else:
-    print("填报失败")
+            log_file.write("填报失败")
+        log_file.write('\n')
+    log_file.close()
+
+
+
+# 定时任务
+# 程序起点
+sched = BlockingScheduler()
+sched.add_job(auto_add_zzut_zdxy_w1_full_values, 'cron',
+              day_of_week='0-6', hour=9, minute=38, args=[BASE_DIR+"\\zzut\\data\\name_table.json"])
+sched.start()
