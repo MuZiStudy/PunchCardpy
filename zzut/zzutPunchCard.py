@@ -10,6 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
 sys.path.append(BASE_DIR)
 
+
 from plugin.zzut.cookie import get_cookies
 from plugin.zzut.add_record import add_record
 # address当前位置名称
@@ -18,18 +19,16 @@ from plugin.zzut.add_record import add_record
 # number 学号
 # academy 学院
 # animal_heat 体温元组
-# 已有函数仅可以在 zzut_zdxy_w1使用，并且最好这个也别用，用add_zzut_zdxy_w1_full_values
-# 因为不同的地方的东西，我不晓得里边的其他内容内容一致（数据条拼音简写，我猜不出来）
+# 测试版
 
 
-def add_zzut_zdxy_w1(address, class_and_grade, number, academy, current_position_number, name, animal_heat=['36.4', '36.8', '36.2']):
+def add_zzut_values(address, class_and_grade, number, academy, current_position_number, name, animal_heat=['36.4', '36.8', '36.2']):
     # 目前已知的url提交链接
     url = 'http://sjgl.zzut.edu.cn/gx/gxxs/jkzk/saveOrEdit.json'
 
     # 目前已知的部分数据串，不同班级或许有不同，内部包含大量数据，自行填写,最好将实际数据直接替换
     values = {"xy": 0, "mqjcs": "", "dysj": "", "counts": "", "jzqksm": "", "yc": "", "zmd": 0, "ycztArray": [], "yhsf": "", "id": "", "sfkyfx": "", "dqwz": current_position_number, "yy": "", "bjh": "", "qt": "", "wtb": "", "sfyc": "1", "zc": "", "ssnj": "", "selectedArea": current_position_number, "zj": 0, "zk": 0, "yczzArray": [], "dwh": "", "xbmc": "", "zwtw": animal_heat[1], "drtw": animal_heat[2], "xgsj": "",
               "shgh": "", "bh": "", "dwmc": "", "ny": 0, "dqwzmc": address, "fbrq": "", "bz": "", "shsj": "", "gd": 0, "sq": 0, "sfycmc": "", "shjg": "", "kfrq": "", "tb": "", "bjmc": class_and_grade, "xh": number, "yczz": "", "szdwmc": academy, "tbsj": "", "xm": name, "yddh": "", "zxhj": 0, "hb": 0, "xwtw": animal_heat[0], "fdyxm": "", "yczt": "", "fyq": 0}
-
     # 页面cookie来源连接
     login_url = 'http://sjgl.zzut.edu.cn/vue/qyweixin/main?userAccount=' + \
         number+'&agentId=1000060'
@@ -43,7 +42,7 @@ def add_zzut_zdxy_w1(address, class_and_grade, number, academy, current_position
 
 
 # 已有函数仅可以在 zzut_zdxy_w1使用
-def add_zzut_zdxy_w1_full_values(values):
+def add_zzut_full_values(values):
     # 目前已知的url提交链接
     url = 'http://sjgl.zzut.edu.cn/gx/gxxs/jkzk/saveOrEdit.json'
 
@@ -61,7 +60,7 @@ def add_zzut_zdxy_w1_full_values(values):
 
 # 修改功能有，但绝壁不能乱给，改错了全完犊子
 # value是完整的数据条，别想着乱搞，数据条有个id，那是指定哪一条数据的关键
-def modify_zzut_zdxy_w1_full_values(cookie, **data):
+def modify_zzut_full_values(cookie, **data):
     # 伪装成浏览器
     ua = UserAgent()
     url = 'http://sjgl.zzut.edu.cn/gx/gxxs/jkzk/saveOrEdit.json'
@@ -95,17 +94,12 @@ def modify_zzut_zdxy_w1_full_values(cookie, **data):
 # 因为很多数据互相绑定的，因为单人环境，所以需要多组对比数据条并加以修改代码、测试后使用
 # 已有函数仅可以在 zzut_zdxy_w1使用
 # 主要功能已经实现，接下来的使用体验，范围，自行实现哦,哈哈
-# results = add_zzut_zdxy_w1(address='地址', class_and_grade='班级',
+# results = add_zzut_values(address='地址', class_and_grade='班级',
 #                            number='学号', academy='学院', current_position_number='所在地区行政编码', name='姓名')
 
 
-# 全数据打卡自测可用
-# values = {}
-# results = add_zzut_zdxy_w1_full_values(values)
-
-
-def auto_add_zzut_zdxy_w1_full_values(file_path):
-
+# 读取json文件
+def read_json_file(file_path):
     # 读取名单列表
     name_file = open(file_path, "r", encoding='UTF-8')
     name_table_str = ""
@@ -115,36 +109,56 @@ def auto_add_zzut_zdxy_w1_full_values(file_path):
 
     # 转化为json对象
     name_table_json = json.loads(name_table_str)
+    return name_table_json
 
+
+# 打印日志
+def write_log_file(number, results):
     # 以追加形式打开日志文件
     log_file = open(BASE_DIR+'\\zzut\\log\\punchcard.log',
                     'a', encoding='UTF-8')
-
-    # 循环执行打卡
-    for values in name_table_json['w1_names']:
-        results = add_zzut_zdxy_w1_full_values(values)
-        log_file.write(values['xh']+'\t')
-        log_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+'\t')
-        if ~('code' in results):
-            if results['code'] == "-1":
-                if results['message'] == "此时间已经填报！":
-                    log_file.write("填报完成")
-                else:
-                    log_file.write("填报失败")
-            elif results['code'] == "1":
+    log_file.write(number+'\t')
+    log_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+'\t')
+    if ~('code' in results):
+        if results['code'] == "-1":
+            if results['message'] == "此时间已经填报！":
                 log_file.write("填报完成")
             else:
-                log_file.write("填报失败异常")
+                log_file.write("填报失败")
+        elif results['code'] == "1":
+            log_file.write("填报完成")
         else:
-            log_file.write("填报失败")
-        log_file.write('\n')
+            log_file.write("填报失败异常")
+    else:
+        log_file.write("填报失败")
+    log_file.write('\n')
     log_file.close()
 
+
+def auto_add_zzut_full_values(file_path):
+
+    name_table_full_values_json = read_json_file(file_path)
+
+    # 循环执行打卡
+    for values in name_table_full_values_json['names']:
+        results = add_zzut_full_values(values)
+        write_log_file(number=values["xh"], results=results)
+
+
+def auto_add_zzut_values(file_path):
+
+    name_table_value_json = read_json_file(file_path)
+
+    # 循环执行打卡
+    for values in name_table_value_json['names']:
+        results = add_zzut_values(address=values["dqwzmc"], class_and_grade=values["bjmc"], number=values["xh"],
+                                  academy=values["szdwmc"], current_position_number=values["dqwz"], name=values["xm"])
+        write_log_file(number=values["xh"], results=results)
 
 
 # 定时任务
 # 程序起点
 sched = BlockingScheduler()
-sched.add_job(auto_add_zzut_zdxy_w1_full_values, 'cron',
-              day_of_week='0-6', hour=9, minute=38, args=[BASE_DIR+"\\zzut\\data\\name_table.json"])
+sched.add_job(auto_add_zzut_values, 'cron',
+              day_of_week='0-6', hour=6, minute=30, args=[BASE_DIR+"\\zzut\\data\\name_table_values.json"])
 sched.start()
