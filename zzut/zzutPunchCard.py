@@ -10,9 +10,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
 sys.path.append(BASE_DIR)
 
-
 from plugin.zzut.cookie import get_cookies
 from plugin.zzut.add_record import add_record
+from plugin.universal.send_mail import send_mail
+from plugin.universal.read_json_file import read_json_file
 # address当前位置名称
 # class_and_grade 班级名称
 # current_position_number 当前位置行政编码，不是邮编
@@ -98,20 +99,6 @@ def modify_zzut_full_values(cookie, **data):
 #                            number='学号', academy='学院', current_position_number='所在地区行政编码', name='姓名')
 
 
-# 读取json文件
-def read_json_file(file_path):
-    # 读取名单列表
-    name_file = open(file_path, "r", encoding='UTF-8')
-    name_table_str = ""
-    for line in name_file:
-        name_table_str = name_table_str+line
-    name_file.close()
-
-    # 转化为json对象
-    name_table_json = json.loads(name_table_str)
-    return name_table_json
-
-
 # 打印日志
 def write_log_file(number, results):
     # 以追加形式打开日志文件
@@ -119,41 +106,96 @@ def write_log_file(number, results):
                     'a', encoding='UTF-8')
     log_file.write(number+'\t')
     log_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+'\t')
-    if ~('code' in results):
-        if results['code'] == "-1":
-            if results['message'] == "此时间已经填报！":
-                log_file.write("填报完成")
-            else:
-                log_file.write("填报失败")
-        elif results['code'] == "1":
-            log_file.write("填报完成")
-        else:
-            log_file.write("填报失败异常")
-    else:
-        log_file.write("填报失败")
+    log_file.write(analyse_status(results=results))
     log_file.write('\n')
     log_file.close()
+
+
+def analyse_status(results):
+    if 'code' in results:
+        if results['code'] == "-1":
+            if results['message'] == "此时间已经填报！":
+                return "填报完成"
+            else:
+                return "填报失败"
+        elif results['code'] == "1":
+            return "填报完成"
+        else:
+            return"填报失败异常"
+    else:
+        return "填报失败"
 
 
 def auto_add_zzut_full_values(file_path):
 
     name_table_full_values_json = read_json_file(file_path)
 
+    inform_account_json_file = read_json_file(
+        BASE_DIR+"\\zzut\\data\\mail_user.json")
+
+    inform_content_head = "<table id=\"customers\"><tr><th>打卡学号</th><th>打卡时间</th><th>打卡状态</th></tr>"
+    inform_content_tail = "</table>"
     # 循环执行打卡
     for values in name_table_full_values_json['names']:
         results = add_zzut_full_values(values)
+        inform_content_head += "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+            values["xh"], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), analyse_status(results=results))
         write_log_file(number=values["xh"], results=results)
+    write_temp_report_file(content=inform_content_head+inform_content_tail)
 
 
 def auto_add_zzut_values(file_path):
 
     name_table_value_json = read_json_file(file_path)
 
+    inform_content_head = "<table id=\"customers\"><tr><th>打卡学号</th><th>打卡时间</th><th>打卡状态</th></tr>"
+    inform_content_tail = "</table>"
     # 循环执行打卡
     for values in name_table_value_json['names']:
         results = add_zzut_values(address=values["dqwzmc"], class_and_grade=values["bjmc"], number=values["xh"],
                                   academy=values["szdwmc"], current_position_number=values["dqwz"], name=values["xm"])
+        inform_content_head += "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+            values["xh"], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), analyse_status(results=results))
         write_log_file(number=values["xh"], results=results)
+    write_temp_report_file(content=inform_content_head+inform_content_tail)
+
+
+def write_temp_report_file(content):
+
+    file_name = datetime.now().strftime("%Y-%m-%d")
+    file_name += "_report_file.txt"
+    file_status = 0
+    if not os.path.isfile(BASE_DIR+'\\zzut\\log\\'+file_name):
+        file_status = 1
+
+    # 以追加形式打开日志文件
+    report_file = open(BASE_DIR+'\\zzut\\log\\'+file_name,
+                       'a', encoding='UTF-8')
+    if file_status == 1:
+        inform_account_json_file = read_json_file(
+            BASE_DIR+"\\zzut\\data\\mail_user.json")
+        inform_content = inform_account_json_file["content_css"]
+        report_file.write(inform_content)
+    report_file.write(content)
+    report_file.close()
+
+
+# 发送报告邮件
+def report_mail():
+    file_name = datetime.now().strftime("%Y-%m-%d")
+    file_name += "_report_file.txt"
+    # 读取报告文件
+    report_file = open(BASE_DIR+'\\zzut\\log\\' +
+                       file_name, "r", encoding='UTF-8')
+    report_file_str = ""
+    for line in report_file:
+        report_file_str = report_file_str+line
+    report_file.close()
+
+    inform_account_json_file = read_json_file(
+        BASE_DIR+"\\zzut\\data\\mail_user.json")
+    send_mail(server=inform_account_json_file["server"], user=inform_account_json_file["user"], passwd=inform_account_json_file["passwd"],
+              subject=inform_account_json_file["subject"], to_user=inform_account_json_file["to_user"], content=report_file_str)
 
 
 # 定时任务
@@ -161,4 +203,5 @@ def auto_add_zzut_values(file_path):
 sched = BlockingScheduler()
 sched.add_job(auto_add_zzut_values, 'cron',
               day_of_week='0-6', hour=6, minute=30, args=[BASE_DIR+"\\zzut\\data\\name_table_values.json"])
+sched.add_job(report_mail, 'cron', day_of_week='0-6', hour=9, minute=0)
 sched.start()

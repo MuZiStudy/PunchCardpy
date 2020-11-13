@@ -128,3 +128,7 @@ name_table.json
 punchcard.log
 # Pyre type checker
 .pyre/
+
+
+
+*_report_file.txt
