@@ -101,6 +101,12 @@ def modify_zzut_full_values(cookie, **data):
 
 # 打印日志
 def write_log_file(number, results):
+    if not os.path.exists(BASE_DIR+'\\zzut\\log'):
+        os.makedirs(BASE_DIR+'\\zzut\\log')
+    elif not os.path.isdir(BASE_DIR+'\\zzut\\log'):
+        os.remove(BASE_DIR+'\\zzut\\log')
+        os.makedirs(BASE_DIR+'\\zzut\\log')
+
     # 以追加形式打开日志文件
     log_file = open(BASE_DIR+'\\zzut\\log\\punchcard.log',
                     'a', encoding='UTF-8')
