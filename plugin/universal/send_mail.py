@@ -12,7 +12,7 @@ def send_mail(server, user, passwd, content, subject, to_user):
     message = MIMEText(content, "HTML")
     message["subject"] = subject
     message["From"] = user
-    message["To"] = user
+    message["To"] = to_user
     try:
         smtp_email = smtplib.SMTP_SSL(server, 465)  # 定义邮箱服务器
         smtp_email.login(user=user, password=passwd)  # 登陆邮箱
