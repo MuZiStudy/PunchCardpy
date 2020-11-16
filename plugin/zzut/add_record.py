@@ -12,7 +12,7 @@ def add_record(url, headers, **data):
     # 伪装成浏览器
     ua = UserAgent()
     values = data['data']
-    if ~('User-Agent' in headers):
+    if not 'User-Agent' in headers:
         headers['User-Agent'] = ua.random
 
     request = urllib.request.Request(url=url, headers=headers, data=json.dumps(
@@ -21,6 +21,6 @@ def add_record(url, headers, **data):
     response = urllib.request.urlopen(request)  # 发送请求
 
     logInfo = response.read().decode()  # 读取对象 将返回的二进制数据转成string类型
-
+    
     return_code = json.loads(logInfo)
     return return_code
