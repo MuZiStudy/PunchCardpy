@@ -109,7 +109,7 @@ def analyse_status(results):
     if 'code' in results:
         if results['code'] == "-1":
             if results['message'] == "此时间已经填报！":
-                return "已填报"
+                return "此时间已经填报！"
             else:
                 return "填报失败"
         elif results['code'] == "1":
@@ -131,12 +131,19 @@ def auto_add_zzut_full_values(file_path):
     # 循环执行打卡
     for values in name_table_full_values_json['names']:
         if login_url_cookie == '':
+            # 获取的是当前帐号的专属cookie
             login_url_cookie = get_login_cookie(values["xh"])
+        else:
+            # 如果不为空，刷新cookie所有权
+            refresh_cookie(login_url_number=values["xh"],cookie=login_url_cookie)
 
         results = add_zzut_full_values(values=values, cookie=login_url_cookie)
         if 'code' in results:
             if results['code'] != "1":
-                login_url_cookie = ''
+                # 有几率是已经打过卡造成的异常，但以防万一，重新获取专属cookie打卡一次
+                login_url_cookie = get_login_cookie(values["xh"])
+                results = add_zzut_full_values(values=values, cookie=login_url_cookie)
+                
         inform_content_head += "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
             values["xh"], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), analyse_status(results=results))
         write_log_file(number=values["xh"], results=results)
@@ -155,14 +162,21 @@ def auto_add_zzut_values(file_path):
     for values in name_table_value_json['names']:
 
         if login_url_cookie == '':
+            # 获取的是当前帐号的专属cookie
             login_url_cookie = get_login_cookie(values["xh"])
-
+        else:
+            # 如果不为空，刷新cookie所有权
+            refresh_cookie(login_url_number=values["xh"],cookie=login_url_cookie)
+       
         results = add_zzut_values(address=values["dqwzmc"], class_and_grade=values["bjmc"], number=values["xh"],
                                   academy=values["szdwmc"], current_position_number=values["dqwz"], name=values["xm"], cookie=login_url_cookie)
         if 'code' in results:
             if results['code'] != "1":
-                login_url_cookie = ''
-
+                # 有几率是已经打过卡造成的异常，但以防万一，重新获取专属cookie打卡一次
+                login_url_cookie = get_login_cookie(values["xh"])
+                results = add_zzut_values(address=values["dqwzmc"], class_and_grade=values["bjmc"], number=values["xh"],
+                                  academy=values["szdwmc"], current_position_number=values["dqwz"], name=values["xm"], cookie=login_url_cookie)
+        
         inform_content_head += "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
             values["xh"], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), analyse_status(results=results))
         write_log_file(number=values["xh"], results=results)
