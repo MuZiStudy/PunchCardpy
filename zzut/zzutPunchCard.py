@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
 sys.path.append(BASE_DIR)
 
-from plugin.zzut.cookie import get_cookies
+from plugin.zzut.cookie import *
 from plugin.zzut.add_record import add_record
 from plugin.universal.send_mail import send_mail
 from plugin.universal.read_json_file import read_json_file
@@ -20,41 +20,43 @@ from plugin.universal.read_json_file import read_json_file
 # number 学号
 # academy 学院
 # animal_heat 体温元组
-# 测试版
 
 
-def add_zzut_values(address, class_and_grade, number, academy, current_position_number, name, animal_heat=['36.4', '36.8', '36.2']):
+def add_zzut_values(address, class_and_grade, number, academy, current_position_number, name, cookie='', animal_heat=['36.4', '36.8', '36.2']):
     # 目前已知的url提交链接
     url = 'http://sjgl.zzut.edu.cn/gx/gxxs/jkzk/saveOrEdit.json'
 
     # 目前已知的部分数据串，不同班级或许有不同，内部包含大量数据，自行填写,最好将实际数据直接替换
     values = {"xy": 0, "mqjcs": "", "dysj": "", "counts": "", "jzqksm": "", "yc": "", "zmd": 0, "ycztArray": [], "yhsf": "", "id": "", "sfkyfx": "", "dqwz": current_position_number, "yy": "", "bjh": "", "qt": "", "wtb": "", "sfyc": "1", "zc": "", "ssnj": "", "selectedArea": current_position_number, "zj": 0, "zk": 0, "yczzArray": [], "dwh": "", "xbmc": "", "zwtw": animal_heat[1], "drtw": animal_heat[2], "xgsj": "",
               "shgh": "", "bh": "", "dwmc": "", "ny": 0, "dqwzmc": address, "fbrq": "", "bz": "", "shsj": "", "gd": 0, "sq": 0, "sfycmc": "", "shjg": "", "kfrq": "", "tb": "", "bjmc": class_and_grade, "xh": number, "yczz": "", "szdwmc": academy, "tbsj": "", "xm": name, "yddh": "", "zxhj": 0, "hb": 0, "xwtw": animal_heat[0], "fdyxm": "", "yczt": "", "fyq": 0}
-    # 页面cookie来源连接
-    login_url = 'http://sjgl.zzut.edu.cn/vue/qyweixin/main?userAccount=' + \
-        number+'&agentId=1000060'
 
+    if cookie == '':
+        # 页面cookie来源连接
+        login_url = 'http://sjgl.zzut.edu.cn/vue/qyweixin/main?userAccount=' + \
+            values['xh']+'&agentId=1000060'
+        cookie = get_cookies(login_url)
     # 请求头原型,可根据自己实际自行添加键值对{'Cookie': '', 'Accept-Encoding': '', 'Content-Type': '','User-Agent': ua.random, 'Referer': ''}
     # User-Agent伪装浏览器类型，默认随机
     # Referer防盗链参数，用于声明是从哪个页面转到这里的
-    headers = {'Cookie': get_cookies(login_url), 'Accept-Encoding': 'gzip', 'Content-Type': 'application/json;charset=UTF-8',
+    headers = {'Cookie': cookie, 'Accept-Encoding': 'gzip', 'Content-Type': 'application/json;charset=UTF-8',
                'Referer': 'http://sjgl.zzut.edu.cn/vue/qyweixin/gx/gxxs/jkbg/jkbgMain/jkbgList'}
     return add_record(url=url, headers=headers, data=values)
 
 
-# 已有函数仅可以在 zzut_zdxy_w1使用
-def add_zzut_full_values(values):
+def add_zzut_full_values(values, cookie=''):
     # 目前已知的url提交链接
     url = 'http://sjgl.zzut.edu.cn/gx/gxxs/jkzk/saveOrEdit.json'
 
-    # 页面cookie来源连接
-    login_url = 'http://sjgl.zzut.edu.cn/vue/qyweixin/main?userAccount=' + \
-        values['xh']+'&agentId=1000060'
+    if cookie == '':
+        # 页面cookie来源连接
+        login_url = 'http://sjgl.zzut.edu.cn/vue/qyweixin/main?userAccount=' + \
+            values['xh']+'&agentId=1000060'
+        cookie = get_cookies(login_url)
 
     # 请求头原型,可根据自己实际自行添加键值对{'Cookie': '', 'Accept-Encoding': '', 'Content-Type': '','User-Agent': ua.random, 'Referer': ''}
     # User-Agent伪装浏览器类型，默认随机
     # Referer防盗链参数，用于声明是从哪个页面转到这里的
-    headers = {'Cookie': get_cookies(login_url), 'Accept-Encoding': 'gzip', 'Content-Type': 'application/json;charset=UTF-8',
+    headers = {'Cookie': cookie, 'Accept-Encoding': 'gzip', 'Content-Type': 'application/json;charset=UTF-8',
                'Referer': 'http://sjgl.zzut.edu.cn/vue/qyweixin/gx/gxxs/jkbg/jkbgMain/jkbgList'}
     return add_record(url=url, headers=headers, data=values)
 
@@ -85,20 +87,6 @@ def modify_zzut_full_values(cookie, **data):
     return return_code
 
 
-# address当前位置名称
-# class_and_grade 班级名称
-# current_position_number 当前位置行政编码，不是邮编
-# number 学号
-# academy 学院
-# animal_heat 体温元组
-# 极度推荐modify_zzut_zdxy_w1_full_values，因为不同的地方的东西，我不晓得里边的其他内容内容一致（数据条拼音简写，我猜不出来）
-# 因为很多数据互相绑定的，因为单人环境，所以需要多组对比数据条并加以修改代码、测试后使用
-# 已有函数仅可以在 zzut_zdxy_w1使用
-# 主要功能已经实现，接下来的使用体验，范围，自行实现哦,哈哈
-# results = add_zzut_values(address='地址', class_and_grade='班级',
-#                            number='学号', academy='学院', current_position_number='所在地区行政编码', name='姓名')
-
-
 # 打印日志
 def write_log_file(number, results):
     if not os.path.exists(BASE_DIR+'\\zzut\\log'):
@@ -121,7 +109,7 @@ def analyse_status(results):
     if 'code' in results:
         if results['code'] == "-1":
             if results['message'] == "此时间已经填报！":
-                return "填报完成"
+                return "此时间已经填报！"
             else:
                 return "填报失败"
         elif results['code'] == "1":
@@ -136,14 +124,26 @@ def auto_add_zzut_full_values(file_path):
 
     name_table_full_values_json = read_json_file(file_path)
 
-    inform_account_json_file = read_json_file(
-        BASE_DIR+"\\zzut\\data\\mail_user.json")
-
     inform_content_head = "<table id=\"customers\"><tr><th>打卡学号</th><th>打卡时间</th><th>打卡状态</th></tr>"
     inform_content_tail = "</table>"
+
+    login_url_cookie = ''
     # 循环执行打卡
     for values in name_table_full_values_json['names']:
-        results = add_zzut_full_values(values)
+        if login_url_cookie == '':
+            # 获取的是当前帐号的专属cookie
+            login_url_cookie = get_login_cookie(values["xh"])
+        else:
+            # 如果不为空，刷新cookie所有权
+            refresh_cookie(login_url_number=values["xh"],cookie=login_url_cookie)
+
+        results = add_zzut_full_values(values=values, cookie=login_url_cookie)
+        if 'code' in results:
+            if results['code'] != "1":
+                # 有几率是已经打过卡造成的异常，但以防万一，重新获取专属cookie打卡一次
+                login_url_cookie = get_login_cookie(values["xh"])
+                results = add_zzut_full_values(values=values, cookie=login_url_cookie)
+                
         inform_content_head += "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
             values["xh"], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), analyse_status(results=results))
         write_log_file(number=values["xh"], results=results)
@@ -156,10 +156,27 @@ def auto_add_zzut_values(file_path):
 
     inform_content_head = "<table id=\"customers\"><tr><th>打卡学号</th><th>打卡时间</th><th>打卡状态</th></tr>"
     inform_content_tail = "</table>"
+
+    login_url_cookie = ''
     # 循环执行打卡
     for values in name_table_value_json['names']:
+
+        if login_url_cookie == '':
+            # 获取的是当前帐号的专属cookie
+            login_url_cookie = get_login_cookie(values["xh"])
+        else:
+            # 如果不为空，刷新cookie所有权
+            refresh_cookie(login_url_number=values["xh"],cookie=login_url_cookie)
+       
         results = add_zzut_values(address=values["dqwzmc"], class_and_grade=values["bjmc"], number=values["xh"],
-                                  academy=values["szdwmc"], current_position_number=values["dqwz"], name=values["xm"])
+                                  academy=values["szdwmc"], current_position_number=values["dqwz"], name=values["xm"], cookie=login_url_cookie)
+        if 'code' in results:
+            if results['code'] != "1":
+                # 有几率是已经打过卡造成的异常，但以防万一，重新获取专属cookie打卡一次
+                login_url_cookie = get_login_cookie(values["xh"])
+                results = add_zzut_values(address=values["dqwzmc"], class_and_grade=values["bjmc"], number=values["xh"],
+                                  academy=values["szdwmc"], current_position_number=values["dqwz"], name=values["xm"], cookie=login_url_cookie)
+        
         inform_content_head += "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
             values["xh"], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), analyse_status(results=results))
         write_log_file(number=values["xh"], results=results)

@@ -12,7 +12,7 @@ def add_record(url, headers, **data):
     # 伪装成浏览器
     ua = UserAgent()
     values = data['data']
-    if ~('User-Agent' in headers):
+    if not 'User-Agent' in headers:
         headers['User-Agent'] = ua.random
 
     request = urllib.request.Request(url=url, headers=headers, data=json.dumps(
